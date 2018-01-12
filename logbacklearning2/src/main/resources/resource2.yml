@@ -1,0 +1,4 @@
+app:
+  address: address
+  head: xiaoq
+  file: ${app.head}/${app.address}

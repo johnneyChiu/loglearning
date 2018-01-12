@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration scan="true" scanPeriod="60 seconds" debug="false">
+
+    <property resource="resource1.properties"></property>
+    <!--好像不填支持yml-->
+    <!-- <property resource="resource2.yml"></property>-->
+    <!--ConsoleAppender:-->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoder 默认配置为PatternLayoutEncoder -->
+        <!--<encoder>：对日志进行格式化。-->
+        <encoder>
+            <!--目前PatternLayoutEncoder 是唯一有用的且默认的encoder -->
+            <!--有一个<pattern>节点，用来设置日志的输入格式。使用“%”加“转换符”方式，
+                如果要输出“%”，则必须用“\”对“\%”进行转义。-->
+            <pattern>[${app.name}][${app.file:-xiaoq log}][${app.hello:-defualt}]%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+        <!--<target>：字符串 System.out 或者 System.err ，默认 System.out -->
+        <target> System.out</target>
+    </appender>
+
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+</configuration>
