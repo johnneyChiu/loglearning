@@ -22,6 +22,7 @@ public class MyApp3 {
 
     //args add -Dlogback.configurationFile=scan1.xml
     public static void main(String... args) {
+        System.setProperty("log.path", "/logs");
         ClassLoader classLoader = MyApp3.class.getClassLoader();
         URL resource = classLoader.getResource("scan1.xml");
         System.out.println(resource.getPath());

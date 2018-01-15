@@ -1,288 +1,147 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-1、scan 配置发生变化,将会重新加载
-2、scanPeriod 监测配置文件发生变化的时间，默认毫秒，scan为true时生效
-3、debug为true时会打印logback内部日志信息
--->
+<!--私人订制-->
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
 
-    <!--属性定制-->
-    <property name="appName" value="loglearning"/>
-
     <!--时间戳字符串   设置将当前时间（解析配置文件的时间）转换为字符串的模式-->
-    <timestamp key="datePattern" value="yyyyMMddHHmmss"/>
+    <timestamp key="defaultDatePattern" value="yyyy-MM-dd HH:mm:ss:SSS"/>
+    <property resource="log.properties"></property>
 
-    <!--设置上下文名称 每个logger都关联到logger上下文，默认上下文名称为“default” 用于区分不同应用程序的记录-->
-    <contextName>${appName}</contextName>
-
-
-    <!--
-    <appender>是<configuration>的子节点，是负责写日志的组件。
-    <appender>有两个必要属性name和class。name指定appender名称，class指定appender的全限定名。
-    -->
-    <!--ConsoleAppender:-->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoder 默认配置为PatternLayoutEncoder -->
-        <!--<encoder>：对日志进行格式化。-->
+    <!-- 负责写控制台日志 -->
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <!--目前PatternLayoutEncoder 是唯一有用的且默认的encoder -->
-            <!--有一个<pattern>节点，用来设置日志的输入格式。使用“%”加“转换符”方式，
-                如果要输出“%”，则必须用“\”对“\%”进行转义。-->
-            <pattern>xiaoq%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <Pattern>${defaultPattern}</Pattern>
+            <charset>UTF-8</charset>
         </encoder>
-        <!--<target>：字符串 System.out 或者 System.err ，默认 System.out -->
-        <target> System.out</target>
     </appender>
-
-    <!--FileAppender-->
-
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <!--<file>：被写入的文件名，可以是相对目录，也可以是绝对目录，如果上级目录不存在会自动创建，没有默认值。-->
-        <file>logdemo2.log</file>
-        <!--如果是 true，日志被追加到文件结尾，如果是 false，清空现存文件，默认是true。-->
-        <append>true</append>
-        <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
-        </encoder>
-        <!--<prudent>：如果是 true，日志会被安全的写入文件，
-            即使其他的FileAppender也在向此文件做写入操作，效率低，默认是 false-->
-        <prudent>false</prudent>
-    </appender>
-
-    <!--RollingFileAppender:-->
-    <!--滚动记录文件，先将日志记录到指定文件，当符合某个条件时，将日志记录到其他文件。-->
-    <appender name="ROLLING_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>rooling.log</file>
-        <!--<append>：如果是 true，日志被追加到文件结尾，如果是 false，清空现存文件，默认是true。-->
-        <append>true</append>
-        <!--当发生滚动时，决定 RollingFileAppender 的行为，涉及文件移动和重命名。-->
+    <!-- 文件日志 -->
+    <appender name="debug" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!--接入pinpoint 如果没有为logutil-->
+        <file>${logger.root:-/home/tmp/logs}/${app.name}/${logger.debug.child:-debug}/${pinpoint.applicationName-:logutil}-debug.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>debug</level>
+        </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!--必要节点，包含文件名及“%d”转换符， “%d”可以包含一个-->
-            <fileNamePattern>rooling-log.%d{yyyy-MM-dd-HH}.log.gz</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-        <!--<triggeringPolicy >: 告知 RollingFileAppender 合适激活滚动。-->
-        <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n </pattern>
-        </encoder>
-        <!--<prudent>：当为true时，不支持FixedWindowRollingPolicy。支持TimeBasedRollingPolicy，
-            但是有两个限制，1不支持也不允许文件压缩，2不能设置file属性，必须留空。-->
-    </appender>
-    <appender name="ROLLING_FILE_2" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>rooling_new.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!--可以根据rollingPolicy 来指定文件名的规则，按照时间或自增id ，
-            保证log输出到由（%d）当前时间指定的特定的文件内，
-            同一个时间规则，有可以根据（%i）来根据文件的大小分多个文件-->
-            <fileNamePattern>rooling-log.%d{yyyy-MM-dd-HH}.%i.log.gz</fileNamePattern>
-            <!--<maxHistory>:可选节点，控制保留的归档文件的最大数量，超出数量就删除旧文件。-->
-            <maxHistory>30</maxHistory>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>1MB</maxFileSize>
+            <fileNamePattern>${logger.root:-/home/tmp/logs}/${app.name}/${logger.debug.child:-debug}/${pinpoint.applicationName-:logutil}-debug.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxHistory>${log.debug.maxHistory:-20}</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${log.debug.maxFile:-50M}</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36}- %msg%n</pattern>
+            <pattern>${defaultPattern}</pattern>
+            <charset>${log.charset}</charset>
         </encoder>
     </appender>
-    <appender name="ROLLING_FILE_FIXED" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>fixed.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>fixed.%i.log.zip</fileNamePattern>
-            <minIndex>1</minIndex>
-            <maxIndex>3</maxIndex>
+    <appender name="info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logger.root:-/home/tmp/logs}/${app.name}/${logger.info.child:-info}/${pinpoint.applicationName-:logutil}-info.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>info</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logger.root:-/home/tmp/logs}/${app.name}/${logger.info.child:-info}/${pinpoint.applicationName-:logutil}-info.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxHistory>${log.info.maxHistory:-30}</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${log.info.maxFile:-100M}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
         </rollingPolicy>
-        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
-            <maxFileSize>1MB</maxFileSize>
-        </triggeringPolicy>
         <encoder>
-            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n </pattern>
+            <pattern>${defaultPattern}</pattern>
+            <charset>${log.charset}</charset>
         </encoder>
+    </appender>
+    <!-- 异常日志输出-->
+    <appender name="exception" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logger.root:-/home/tmp/logs}/${app.name}/${logger.exception.child:-exception}/${pinpoint.applicationName-:logutil}-exception.log</file>
+        <!--求值过滤器，评估、鉴别日志是否符合指定条件. 需要额外的两个JAR包，commons-compiler.jar和janino.jar -->
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+        <!--默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator-->
+        <evaluator>
+        <!--过滤掉所有日志消息中不包含"Exception"字符串的日志-->
+        <expression>return message.contains("Exception");</expression>
+        </evaluator>
+        <OnMatch>ACCEPT</OnMatch>
+        <OnMismatch>DENY</OnMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logger.root:-/home/tmp/logs}/${app.name}/${logger.exception.child:-exception}/${pinpoint.applicationName-:logutil}-exception.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxHistory>${log.exception.maxHistory:-10}</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${log.exception.maxFile:-30M}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${defaultPattern}</pattern>
+            <charset>${log.charset}</charset>
+        </encoder>
+    </appender>
+
+    <appender name="warn" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logger.root:-/home/tmp/logs}/${app.name}/${logger.warn.child:-warn}/${pinpoint.applicationName-:logutil}-warn.log</file>
+        <encoder>
+            <Pattern>${defaultPattern}</Pattern>
+            <charset>${log.charset}</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logger.root:-/home/tmp/logs}/${app.name}/${logger.warn.child:-warn}/${pinpoint.applicationName-:logutil}-warn.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxHistory>${log.warn.maxHistory:-30}</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${log.warn.maxFile:-30M}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+    </appender>
+    <appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${logger.root:-/home/tmp/logs}/${app.name}/${logger.error.child:-error}/${pinpoint.applicationName-:logutil}-error.log</file>
+        <encoder>
+            <Pattern>${defaultPattern}</Pattern>
+            <charset>${log.charset}</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logger.root:-/home/tmp/logs}/${app.name}/${logger.error.child:-error}/${pinpoint.applicationName-:logutil}-error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxHistory>${log.error.maxHistory:-30}</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${log.error.maxFile:-30M}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
     </appender>
 
     <!--AsyncAppender-->
     <appender name="SYNC_ROLLING_FILE" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="ROLLING_FILE"/>
-        <queueSize>1024</queueSize>
-        <discardingThreshold>0</discardingThreshold>
-    </appender>
-    <!--另外还有SocketAppender、SMTPAppender、DBAppender、SyslogAppender、SiftingAppender-->
-
-    <!--encoder 测试-->
-    <appender name="ENCODER_TEST" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- encoder 默认配置为PatternLayoutEncoder -->
-        <!--<encoder>：对日志进行格式化。-->
-        <encoder>
-            <!--目前PatternLayoutEncoder 是唯一有用的且默认的encoder -->
-            <!--有一个<pattern>节点，用来设置日志的输入格式。使用“%”加“转换符”方式，
-                如果要输出“%”，则必须用“\”对“\%”进行转义。-->
-
-            <!--%c {length } %lo{length } %logger{length }输出日志的logger名，可有一个整形参数，
-            功能是缩短logger名，设置为0表示只输入logger最右边点符号之后的字符串。
-            Conversion specifier Logger name Result-->
-            <!--C {length }  class {length } 输出执行记录请求的调用者的全限定名。
-            参数与上面的一样。尽量避免使用，除非执行速度不造成任何问题。-->
-            <!--d {pattern } date {pattern } eg:%date{ISO8601} %date{dd MMM yyyy ;HH:mm:ss.SSS}
-            输出日志的打印日志，模式语法与java.text.SimpleDateFormat 兼容。 Conversion Pattern Result-->
-            <!--caller{depth} caller{depth, evaluator-1, ... evaluator-n} eg:  %caller{2,evaluator-2} -->
-            <!--m / msg / message 输出应用程序提供的信息。-->
-            <!--M / method 	输出执行日志请求的方法名。尽量避免使用，除非执行速度不造成任何问题。-->
-            <!--n输出平台先关的分行符“\n”或者“\r\n”。-->
-            <!--p / le / level-->
-            <!--r / relative 输出从程序启动到创建日志记录的时间，单位是毫秒-->
-            <!--t / thread 输出产生日志的线程名。-->
-            <!--replace(p ){r, t} "%replace(%msg){'\s', ''}"
-            p 为日志内容，r 是正则表达式，将p 中符合r 的内容替换为t 。
-            -->
-
-            <pattern>%C|%r | %d{HH:mm:ss.SSS} | %caller{3} |[%thread] %-5level %logger{36} - %msg|%replace(%msg){'=', '*'}%n</pattern>
-        </encoder>
-        <!--<target>：字符串 System.out 或者 System.err ，默认 System.out -->
-        <target> System.out</target>
-    </appender >
-
-    <!--<filter>:过滤器，执行一个过滤器会有返回个枚举值，即DENY，NEUTRAL，ACCEPT其中之一。
-    返回DENY，日志将立即被抛弃不再经过其他过滤器；
-    返回NEUTRAL，有序列表里的下个过滤器过接着处理日志；
-    返回ACCEPT，日志会被立即处理，不再经过剩余过滤器。-->
-
-
-    <appender name="LEVEL_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <!--将过滤器的日志级别配置为INFO，所有INFO级别的日志交给appender处理，非INFO级别的日志，被过滤掉。-->
-        <filter class="ch.qos.logback.classic.filter.LevelFilter">
-            <level>INFO</level>
-            <onMatch>ACCEPT</onMatch>
-            <onMismatch>DENY</onMismatch>
-        </filter>
-        <encoder>
-            <pattern>
-                %-4relative [%thread] %-5level %logger{30} - %msg%n
-            </pattern>
-        </encoder>
-    </appender>
-
-    <appender name="THRESHOLD_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- 过滤掉 TRACE 和 DEBUG 级别的日志-->
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>INFO</level>
-        </filter>
-        <encoder>
-            <pattern>
-                %-4relative [%thread] %-5level %logger{30} - %msg%n
-            </pattern>
-        </encoder>
-    </appender>
-
-    <!-- 求值过滤器，评估、鉴别日志是否符合指定条件。
-    需要额外的两个JAR包，commons-compiler.jar和janino.jar有以下子节点-->
-    <appender name="EVALUATOR_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <!-- 过滤掉所有日志消息中不包含“billing”字符串的日志-->
-        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-            <evaluator> <!-- 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
-                <expression>return message.contains("billing");</expression>
-            </evaluator>
-            <OnMatch>ACCEPT </OnMatch>
-            <OnMismatch>DENY</OnMismatch>
-        </filter>
-        <encoder>
-            <pattern>
-                %-4relative [%thread] %-5level %logger{30} - %msg%n
-            </pattern>
-        </encoder>
-    </appender>
-    <!-- 求值过滤器，评估、鉴别日志是否符合指定条件。
-    需要额外的两个JAR包，commons-compiler.jar和janino.jar有以下子节点-->
-    <appender name="EVALUATOR_CONSOLE_2" class="ch.qos.logback.core.ConsoleAppender">
-        <!--匹配器，尽管可以使用String类的matches()方法进行模式匹配，但会导致每次调用过滤器时都会创建一个新的Pattern对象，为了消除这种开销，可以预定义一个或多个matcher对象，定以后就可以在求值表达式中重复引用。<matcher>是<evaluator>的子标签。
-            <matcher>中包含两个子标签，一个是<name>，用于定义matcher的名字，求值表达式中使用这个名字来引用matcher；另一个是<regex>，用于配置匹配条件-->
-        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-            <evaluator>
-                <matcher>
-                    <Name>odd</Name>
-                    <!-- filter out odd numbered statements -->
-                    <regex>statement [13579]</regex>
-                </matcher>
-
-                <expression>odd.matches(formattedMessage)</expression>
-            </evaluator>
-            <OnMatch>ACCEPT </OnMatch>
-            <OnMismatch>DENY</OnMismatch>
-        </filter>
-        <encoder>
-            <pattern>
-                %-4relative [%thread] %-5level %logger{30} - %msg%n
-            </pattern>
-        </encoder>
+        <queueSize>${log.async.queueSize:-1024}</queueSize>
+        <discardingThreshold>${log.async.discardingThreshold:-0}</discardingThreshold>
     </appender>
 
 
-    <!--用来设置某一个包或者具体的某一个类的日志打印级别、以及指定<appender>。
-        <loger>仅有一个name属性，一个可选的level和一个可选的addtivity属性。
-        name用来指定受此loger约束的某一个包或者具体的某一个类。
-        level日志级别，大小写无关：TRACE, DEBUG, INFO, WARN, ERROR, ALL 和 OFF，还有一个特殊INHERITED或者同义词NULL，
-        代表强制执行上级的级别。
-        addtivity是否向上级loger传递打印信息。默认是true。
-        <appender-ref>标识这个appender将会添加到这个loger
-    -->
-    <logger name="log.demo" level="ERROR" additivity="true">
-        <appender-ref ref="STDOUT"></appender-ref>
-    </logger>
+    <logger name="ch.qos.logback" />
 
-    <logger name="log.chapter1" level="ERROR" additivity="false">
-        <appender-ref ref="STDOUT"/>
-    </logger>
-
-    <logger name="log.chapter2.LogDemo2" level="INFO" additivity="false">
-        <appender-ref ref="FILE"/>
-    </logger>
-
-    <!--同步滚动-->
-    <logger name="log.chapter3.LogDemo3" level="DEBUG" additivity="false">
-        <appender-ref ref="ROLLING_FILE"/>
-    </logger>
-    <!--异步滚动-->
-    <logger name="log.chapter4.LogDemo4" level="DEBUG" additivity="false">
-        <appender-ref ref="AsyncAppender"/>
-        <appender-ref ref="ROLLING_FILE"/>
-    </logger>
-    <!--同步按大小滚动-->
-    <logger name="log.chapter5.LogDemo5" level="DEBUG" additivity="false">
-        <appender-ref ref="ROLLING_FILE_2"/>
-    </logger>
-    <!--异步按大小滚动-->
-    <logger name="log.chapter6.LogDemo6" level="DEBUG" additivity="false">
-        <appender-ref ref="AsyncAppender"/>
-        <appender-ref ref="ROLLING_FILE_2"/>
-    </logger>
-
-    <logger name="log.chapter7.LogDemo7" level="DEBUG" additivity="false">
-        <appender-ref ref="ROLLING_FILE_FIXED"/>
-    </logger>
+    <root level="debug">
+        <!--测试，开发环境需要打印日志 jvm环境变量-Dlogback.env=dev -->
+        <if condition='property("logback.env").contains("dev")'>
+            <then>
+                <appender-ref ref="stdout" />
+                <appender-ref ref="debug" />
+                <appender-ref ref="info" />
+                <appender-ref ref="exception" />
+                <appender-ref ref="warn" />
+                <appender-ref ref="error" />
+                <appender-ref ref="SYNC_ROLLING_FILE"/>
+            </then>
+            <else>
+                <appender-ref ref="info" />
+                <appender-ref ref="exception" />
+                <appender-ref ref="warn" />
+                <appender-ref ref="error" />
+                <appender-ref ref="SYNC_ROLLING_FILE"/>
+            </else>
+        </if>
 
 
-    <logger name="log.chapter8.LogDemo8" level="TRACE" additivity="false">
-        <appender-ref ref="ENCODER_TEST"/>
-    </logger>
 
-    <logger name="log.chapter9.LogDemo9" level="TRACE" additivity="false">
-        <appender-ref ref="LEVEL_CONSOLE"/>
-    </logger>
-    <logger name="log.chapter9.LogDemo10" level="TRACE" additivity="false">
-        <appender-ref ref="EVALUATOR_CONSOLE"/>
-    </logger>
-
-    <logger name="log.chapter9.LogDemo11" level="TRACE" additivity="false">
-        <appender-ref ref="EVALUATOR_CONSOLE_2"/>
-    </logger>
-
-
-    <!--<root level="INFO">将root的打印级别设置为“INFO”，指定了名字为“STDOUT”的appender
-    ，root将级别为“INFO”及大于“INFO”的日志信息交给已经配置好的名为“STDOUT”的appender处理
-    -->
-    <root level="INFO">
-        <appender-ref ref="STDOUT" />
     </root>
 
 </configuration>
